@@ -237,7 +237,7 @@ func percent(v map[string]struct {
 }
 func (m model) View() string {
 	var b strings.Builder
-	b.WriteString("audiotui — PulseAudio / PipeWire\n\n")
+	b.WriteString("aiyou — PulseAudio / PipeWire\n\n")
 	b.WriteString("OUTPUTS (↑↓ select, d/enter default, +/- volume, m mute)\n")
 	for i, s := range m.data.sinks {
 		mark := " "
@@ -296,7 +296,7 @@ func truncate(s string, n int) string {
 }
 func main() {
 	if _, err := exec.LookPath("pactl"); err != nil {
-		fmt.Fprintln(os.Stderr, "audiotui requires pactl (PulseAudio or pipewire-pulse)")
+		fmt.Fprintln(os.Stderr, "aiyou requires pactl (PulseAudio or pipewire-pulse)")
 		os.Exit(1)
 	}
 	p := tea.NewProgram(model{}, tea.WithAltScreen())
