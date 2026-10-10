@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Mrhunderb/aiyou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/audio"
 )
 
 // Client invokes pactl to load state and execute audio operations.

@@ -1,8 +1,10 @@
-# aiyou
+# ayou
 
 A keyboard-driven terminal audio control center for PulseAudio and PipeWire (via `pipewire-pulse`). Inspired by [bottom](https://github.com/ClementTsang/bottom)'s focused widgets and dashboard layout, and by pavucontrol's audio controls. It uses `pactl` as its backend.
 
-![aiyou five-widget audio dashboard with default output and input devices marked](docs/assets/aiyou-dashboard.png)
+![ayou five-widget audio dashboard with default output and input devices marked](docs/assets/ayou-dashboard.png)
+
+*Screenshot predates the rename; the current title is AYOU.*
 
 ## Requirements
 
@@ -16,7 +18,7 @@ A keyboard-driven terminal audio control center for PulseAudio and PipeWire (via
 ```sh
 go run .
 # or
-go build -o aiyou . && ./aiyou
+go build -o ayou . && ./ayou
 ```
 
 ## Layout

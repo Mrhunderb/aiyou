@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Mrhunderb/aiyou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/audio"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
@@ -201,9 +201,9 @@ func (m model) View() string {
 		h = 32
 	}
 	if w < 20 || h < 9 {
-		return "aiyou: terminal too small (need 20x9)"
+		return "ayou: terminal too small (need 20x9)"
 	}
-	header := titleStyle.Render(" ◉ AIYOU ") + mutedStyle.Render("│") + "  PulseAudio / PipeWire  " + mutedStyle.Render("│") + "  " + fmt.Sprintf("OUT %d  IN %d  PLAY %d  REC %d", len(m.data.Sinks), len(m.data.Sources), len(m.data.SinkInputs), len(m.data.SourceOutputs))
+	header := titleStyle.Render(" ◉ AYOU ") + mutedStyle.Render("│") + "  PulseAudio / PipeWire  " + mutedStyle.Render("│") + "  " + fmt.Sprintf("OUT %d  IN %d  PLAY %d  REC %d", len(m.data.Sinks), len(m.data.Sources), len(m.data.SinkInputs), len(m.data.SourceOutputs))
 	header = truncate(header, w)
 	var body string
 	availableH := max(3, h-4)

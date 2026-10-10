@@ -1,4 +1,4 @@
-module github.com/Mrhunderb/aiyou
+module github.com/Mrhunderb/ayou
 
 go 1.24.0
 

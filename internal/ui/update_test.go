@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Mrhunderb/aiyou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/audio"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
