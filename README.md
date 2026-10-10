@@ -37,7 +37,7 @@ On a wide terminal, all five bordered widgets share one dashboard. The left colu
 | `m` | Toggle mute for a selected stream or device |
 | `d` | Set selected output/input device as default |
 | `Enter` or `p` | Choose destination for a stream, port for a device, or profile for a card |
-| `e` | Expand or collapse selected widget |
+| `e` | Expand or collapse selected widget; while expanded, switching widgets is disabled until `e` or `Esc` |
 | `/`, `n`/`N` | Find an item by name, then jump to next/previous match |
 | `Esc` | Close menu/search/help or collapse expanded view |
 | `?` | Show help |

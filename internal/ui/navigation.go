@@ -60,6 +60,11 @@ func (m model) count(p int) int {
 	return 0
 }
 func (m *model) changeFocus(p int) {
+	// Expansion is modal: selection and audio controls remain available,
+	// but widget navigation is disabled until e or Esc collapses it.
+	if m.expanded {
+		return
+	}
 	m.focus = (p + panelCount) % panelCount
 	m.search = ""
 	m.searching = false
@@ -75,7 +80,7 @@ var widgetPositions = [panelCount]struct{ x, y int }{
 }
 
 func (m *model) focusDirection(dx, dy int) {
-	if dx == 0 && dy == 0 {
+	if m.expanded || (dx == 0 && dy == 0) {
 		return
 	}
 	from := widgetPositions[m.focus]

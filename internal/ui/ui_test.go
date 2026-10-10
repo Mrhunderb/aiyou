@@ -100,6 +100,42 @@ func TestDirectionalWidgetFocus(t *testing.T) {
 	}
 }
 
+func TestExpandedWidgetLocksFocus(t *testing.T) {
+	m := sampleModel()
+	m = key(m, "e")
+	if !m.expanded {
+		t.Fatal("widget did not expand")
+	}
+	for _, msg := range []tea.KeyMsg{
+		{Type: tea.KeyTab}, {Type: tea.KeyShiftTab},
+		{Type: tea.KeyRunes, Runes: []rune("2")}, {Type: tea.KeyRunes, Runes: []rune("3")},
+		{Type: tea.KeyRunes, Runes: []rune("4")}, {Type: tea.KeyRunes, Runes: []rune("5")},
+		{Type: tea.KeyCtrlDown}, {Type: tea.KeyShiftRight},
+		{Type: tea.KeyRunes, Runes: []rune("J")}, {Type: tea.KeyRunes, Runes: []rune("D")},
+	} {
+		updated, _ := m.Update(msg)
+		m = updated.(model)
+		if m.focus != outputs || !m.expanded {
+			t.Fatalf("%s switched expanded widget: focus=%d", msg.String(), m.focus)
+		}
+	}
+	m = key(m, "down")
+	if m.cursor[outputs] != 1 {
+		t.Fatal("row navigation was disabled in expanded mode")
+	}
+	m = key(m, "e")
+	m = key(m, "tab")
+	if m.expanded || m.focus != inputs {
+		t.Fatalf("focus did not unlock after e: %+v", m)
+	}
+	m = key(m, "e")
+	m = key(m, "esc")
+	m = key(m, "tab")
+	if m.expanded || m.focus != playback {
+		t.Fatalf("focus did not unlock after Esc: %+v", m)
+	}
+}
+
 func TestFivePanelDashboard(t *testing.T) {
 	for _, size := range [][2]int{{100, 30}, {80, 24}} {
 		m := sampleModel()
