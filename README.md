@@ -1,30 +1,49 @@
-# audiotui
+# aiyou
 
-A minimal Go TUI for controlling PulseAudio-compatible servers (including PipeWire via `pipewire-pulse`). It uses `pactl` as its backend.
+A keyboard-driven terminal audio control center for PulseAudio and PipeWire (via `pipewire-pulse`). Inspired by [bottom](https://github.com/ClementTsang/bottom)'s focused widgets and dashboard layout, and by pavucontrol's audio controls. It uses `pactl` as its backend.
 
 ## Requirements
 
 - Linux with PulseAudio or PipeWire's PulseAudio compatibility server
 - `pactl` available in `PATH`
-- Optional: `bluetoothctl` to show the Bluetooth alias when `pactl` reports `(null)` for an output name
-- Go 1.24+
+- Optional: `bluetoothctl` for the Bluetooth alias when PulseAudio reports `(null)`
+- Go 1.24+ to build from source
 
 ## Run
 
 ```sh
 go run .
+# or
+go build -o aiyou . && ./aiyou
 ```
 
-Or build an executable with `go build -o audiotui .`.
+## Layout
+
+On a wide terminal, four bordered widgets show **Playback** (application audio), **Output Devices** (speakers/headphones), **Recording** (applications capturing audio), and **Input Devices** (microphones/monitor sources). Press `5` for **Configuration** (card profiles). A focused widget has a cyan border and highlighted selection. On narrow terminals or in expanded mode, only the focused widget is shown.
 
 ## Keys
 
-- `↑` / `↓` or `j` / `k`: select an output or application stream
-- `Tab`: switch focus between output devices and application streams
-- `d` / `Enter`: set selected output as default; on a stream, move it to the selected output
-- `+` / `-`: adjust selected output volume by 5%
-- `m`: toggle mute for selected output or stream
-- `r`: refresh
-- `q` / `Ctrl-C`: quit
+| Keys | Action |
+| --- | --- |
+| `Tab` / `Shift-Tab`, `1`–`5` | Switch widgets |
+| `Ctrl`/`Shift` + arrows, uppercase `H`/`J`/`K`/`L` or `W`/`A`/`S`/`D` | Move focus to the widget above/left/below/right (no wrap at edges) |
+| `↑`/`↓` or `j`/`k` | Select an item |
+| `Home`/`End`, `g`/`G`, `PgUp`/`PgDn` | Navigate a list |
+| `←`/`→`, `h`/`l`, `-`/`+` | Adjust selected volume by 5% |
+| `m` | Toggle mute for a selected stream or device |
+| `d` | Set selected output/input device as default |
+| `Enter` or `p` | Choose destination for a stream, port for a device, or profile for a card |
+| `e` | Expand or collapse selected widget |
+| `/`, `n`/`N` | Find an item by name, then jump to next/previous match |
+| `Esc` | Close menu/search/help or collapse expanded view |
+| `?` | Show help |
+| `r` | Refresh now (also refreshes every two seconds) |
+| `q` or `Ctrl-C` | Quit |
 
-The view refreshes every two seconds. This MVP intentionally omits input devices, profiles, ports, and PipeWire-native controls.
+Selecting a card profile can change which inputs and outputs are available. Monitor sources are listed alongside microphones. Volume display averages channels; controls currently change all channels together. This is not a full replacement for pavucontrol: per-channel volume, balance, and advanced device settings are not supported.
+
+## Tests
+
+```sh
+go test ./...
+```

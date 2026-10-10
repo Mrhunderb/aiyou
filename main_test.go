@@ -13,7 +13,7 @@ func TestSinkDisplayName(t *testing.T) {
 		}
 		return "觅声-Polaris"
 	}
-	device := sink{
+	device := Sink{
 		Name: "bluez_output.41_42_D1_97_77_91.1", Description: "(null)",
 		Properties: map[string]string{"device.bus": "bluetooth", "device.alias": "(null)", "api.bluez5.address": "41:42:D1:97:77:91"},
 	}
