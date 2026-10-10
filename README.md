@@ -2,6 +2,8 @@
 
 A keyboard-driven terminal audio control center for PulseAudio and PipeWire (via `pipewire-pulse`). Inspired by [bottom](https://github.com/ClementTsang/bottom)'s focused widgets and dashboard layout, and by pavucontrol's audio controls. It uses `pactl` as its backend.
 
+![aiyou dashboard showing playback, recording, output device, and input device widgets](docs/assets/aiyou-dashboard.png)
+
 ## Requirements
 
 - Linux with PulseAudio or PipeWire's PulseAudio compatibility server
