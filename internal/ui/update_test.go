@@ -42,6 +42,50 @@ func TestRefreshRetainsSelection(t *testing.T) {
 		t.Fatalf("error should retain previous snapshot: %+v", m)
 	}
 }
+func TestNumberedPanelActions(t *testing.T) {
+	backend := &stubBackend{}
+	for _, tc := range []struct {
+		key          string
+		focus        int
+		id           string
+		volume, mute audio.Operation
+	}{
+		{"1", outputs, "speakers", audio.SetOutputVolume, audio.ToggleOutputMute},
+		{"2", inputs, "microphone", audio.SetInputVolume, audio.ToggleInputMute},
+		{"3", playback, "4", audio.SetPlaybackVolume, audio.TogglePlaybackMute},
+		{"4", recording, "5", audio.SetRecordingVolume, audio.ToggleRecordingMute},
+	} {
+		m := sampleModel()
+		m.backend = backend
+		m = key(m, tc.key)
+		if m.focus != tc.focus || m.selectedID(m.focus) != tc.id {
+			t.Fatalf("key %s focused %d / %q", tc.key, m.focus, m.selectedID(m.focus))
+		}
+		for _, op := range []struct {
+			key       string
+			operation audio.Operation
+		}{{"+", tc.volume}, {"m", tc.mute}} {
+			_, cmd := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(op.key)})
+			if cmd == nil {
+				t.Fatalf("key %s in panel %s: missing action", op.key, tc.key)
+			}
+			if msg := cmd().(actionMsg); msg.err != nil {
+				t.Fatal(msg.err)
+			}
+			a := backend.actions[len(backend.actions)-1]
+			if a.Operation != op.operation || a.Target != tc.id {
+				t.Errorf("key %s in panel %s: %+v", op.key, tc.key, a)
+			}
+		}
+	}
+	m := sampleModel()
+	m.backend = backend
+	m = key(m, "5")
+	if m.focus != configuration || m.volumeAction("+5%") != nil || m.muteAction() != nil || m.defaultAction() != nil {
+		t.Fatal("configuration has unexpected volume, mute, or default control")
+	}
+}
+
 func TestActionsUseBackend(t *testing.T) {
 	backend := &stubBackend{}
 	m := sampleModel()

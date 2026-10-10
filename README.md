@@ -2,7 +2,9 @@
 
 A keyboard-driven terminal audio control center for PulseAudio and PipeWire (via `pipewire-pulse`). Inspired by [bottom](https://github.com/ClementTsang/bottom)'s focused widgets and dashboard layout, and by pavucontrol's audio controls. It uses `pactl` as its backend.
 
-![aiyou dashboard showing playback, recording, output device, and input device widgets](docs/assets/aiyou-dashboard.png)
+![aiyou dashboard (earlier four-widget layout)](docs/assets/aiyou-dashboard.png)
+
+*Screenshot shows an earlier four-widget layout; the current dashboard also includes Configuration.*
 
 ## Requirements
 
@@ -21,7 +23,7 @@ go build -o aiyou . && ./aiyou
 
 ## Layout
 
-On a wide terminal, four bordered widgets show **Playback** (application audio), **Output Devices** (speakers/headphones), **Recording** (applications capturing audio), and **Input Devices** (microphones/monitor sources). Press `5` for **Configuration** (card profiles). A focused widget has a cyan border and highlighted selection. On narrow terminals or in expanded mode, only the focused widget is shown.
+On a wide terminal, all five bordered widgets share one dashboard. The left column contains **1 Output Devices** (speakers/headphones) above **2 Input Devices** (microphones/monitor sources). The right column contains **3 Playback** (application audio), **4 Recording** (applications capturing audio), and **5 Configuration** (card profiles), top to bottom. A focused widget has a cyan border and highlighted selection. On narrow terminals or in expanded mode, only the focused widget is shown. `Tab` and keys `1`–`5` follow this numbered order; directional focus uses the widgets' screen positions.
 
 ## Keys
 

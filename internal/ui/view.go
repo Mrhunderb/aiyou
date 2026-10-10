@@ -213,16 +213,22 @@ func (m model) View() string {
 		}
 		rows = append(rows, mutedStyle.Render(fmt.Sprintf("%d-%d/%d  ↑↓ choose  Enter apply  Esc cancel", start+1, min(len(m.menu), start+visible), len(m.menu))))
 		body = m.panelText(m.menuTitle, rows, w, availableH)
-	} else if m.expanded || m.focus == configuration || w < 70 || h < 20 {
+	} else if m.expanded || w < 70 || h < 20 {
 		body = m.panel(m.focus, w, availableH)
 	} else {
-		leftW := (w - 1) / 2
-		rightW := w - leftW - 1
-		topH := availableH / 2
-		bottomH := availableH - topH
-		top := lipgloss.JoinHorizontal(lipgloss.Top, m.panel(playback, leftW, topH), " ", m.panel(outputs, rightW, topH))
-		bottom := lipgloss.JoinHorizontal(lipgloss.Top, m.panel(recording, leftW, bottomH), " ", m.panel(inputs, rightW, bottomH))
-		body = lipgloss.JoinVertical(lipgloss.Left, top, bottom)
+		leftW := w / 2
+		rightW := w - leftW
+		leftTop := availableH / 2
+		rightTop := availableH / 3
+		rightMiddle := availableH / 3
+		left := lipgloss.JoinVertical(lipgloss.Left,
+			m.panel(outputs, leftW, leftTop),
+			m.panel(inputs, leftW, availableH-leftTop))
+		right := lipgloss.JoinVertical(lipgloss.Left,
+			m.panel(playback, rightW, rightTop),
+			m.panel(recording, rightW, rightMiddle),
+			m.panel(configuration, rightW, availableH-rightTop-rightMiddle))
+		body = lipgloss.JoinHorizontal(lipgloss.Top, left, right)
 	}
 	status := m.status
 	if m.searching {

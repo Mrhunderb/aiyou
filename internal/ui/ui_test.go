@@ -8,6 +8,7 @@ import (
 	"github.com/Mrhunderb/aiyou/internal/audio"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func sampleModel() model {
@@ -42,7 +43,7 @@ func key(m model, name string) model {
 }
 func TestNavigationAndMenu(t *testing.T) {
 	m := sampleModel()
-	m = key(m, "3")
+	m = key(m, "1")
 	if m.focus != outputs {
 		t.Fatalf("focus = %d", m.focus)
 	}
@@ -67,11 +68,11 @@ func TestNavigationAndMenu(t *testing.T) {
 func TestDirectionalWidgetFocus(t *testing.T) {
 	// Each entry is the expected target for up, down, left, right.
 	want := [panelCount][4]int{
-		playback:      {playback, recording, playback, outputs},
-		recording:     {playback, recording, recording, inputs},
-		outputs:       {outputs, inputs, playback, outputs},
-		inputs:        {outputs, inputs, recording, inputs},
-		configuration: {configuration, configuration, configuration, configuration},
+		outputs:       {outputs, inputs, outputs, playback},
+		inputs:        {outputs, inputs, inputs, configuration},
+		playback:      {playback, recording, outputs, playback},
+		recording:     {playback, configuration, inputs, recording},
+		configuration: {recording, configuration, inputs, configuration},
 	}
 	keys := [][4]tea.KeyMsg{
 		{{Type: tea.KeyCtrlUp}, {Type: tea.KeyCtrlDown}, {Type: tea.KeyCtrlLeft}, {Type: tea.KeyCtrlRight}},
@@ -96,6 +97,31 @@ func TestDirectionalWidgetFocus(t *testing.T) {
 	m = key(m, "down")
 	if m.focus != outputs || m.cursor[outputs] != 1 {
 		t.Fatalf("ordinary down should only select rows: focus=%d cursor=%d", m.focus, m.cursor[outputs])
+	}
+}
+
+func TestFivePanelDashboard(t *testing.T) {
+	for _, size := range [][2]int{{100, 30}, {80, 24}} {
+		m := sampleModel()
+		m.width, m.height = size[0], size[1]
+		m.focus = configuration // Configuration should stay in the dashboard.
+		lines := strings.Split(ansi.Strip(m.View()), "\n")
+		positions := map[string]struct{ line, col int }{}
+		for row, line := range lines {
+			for _, title := range []string{"1 OUTPUT DEVICES", "2 INPUT DEVICES", "3 PLAYBACK", "4 RECORDING", "5 CONFIGURATION"} {
+				if col := strings.Index(line, title); col >= 0 {
+					positions[title] = struct{ line, col int }{row, col}
+				}
+			}
+		}
+		if len(positions) != 5 {
+			t.Fatalf("%dx%d: expected five visible widgets, got %v", m.width, m.height, positions)
+		}
+		o, i := positions["1 OUTPUT DEVICES"], positions["2 INPUT DEVICES"]
+		p, r, c := positions["3 PLAYBACK"], positions["4 RECORDING"], positions["5 CONFIGURATION"]
+		if !(o.col == i.col && p.col == r.col && r.col == c.col && o.col < p.col && o.line < i.line && p.line < r.line && r.line < c.line) {
+			t.Errorf("%dx%d: wrong grid positions: %v", m.width, m.height, positions)
+		}
 	}
 }
 

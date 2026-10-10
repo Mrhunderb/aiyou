@@ -8,15 +8,15 @@ import (
 )
 
 const (
-	playback = iota
-	recording
-	outputs
+	outputs = iota
 	inputs
+	playback
+	recording
 	configuration
 	panelCount
 )
 
-var titles = []string{"PLAYBACK", "RECORDING", "OUTPUT DEVICES", "INPUT DEVICES", "CONFIGURATION"}
+var titles = []string{"OUTPUT DEVICES", "INPUT DEVICES", "PLAYBACK", "RECORDING", "CONFIGURATION"}
 
 type refreshMsg struct {
 	data audio.Snapshot

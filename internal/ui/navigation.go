@@ -65,27 +65,38 @@ func (m *model) changeFocus(p int) {
 	m.searching = false
 }
 
-// Positions match the grid in View: playback | outputs, recording | inputs.
-// Configuration is a separate page, reached via Tab or 5, not an adjacent widget.
-var widgetPositions = [configuration]struct{ x, y int }{
-	playback: {0, 0}, recording: {0, 1}, outputs: {1, 0}, inputs: {1, 1},
+// Widget centers match the two left rows and three right rows in View.
+// The y coordinates are twelfths of the available height (3/9 vs 2/6/10).
+// Horizontal movement picks the closest vertical center in the other column;
+// on a tie it prefers the lower widget (recording -> input devices).
+var widgetPositions = [panelCount]struct{ x, y int }{
+	outputs: {0, 3}, inputs: {0, 9},
+	playback: {1, 2}, recording: {1, 6}, configuration: {1, 10},
 }
 
 func (m *model) focusDirection(dx, dy int) {
-	if m.focus >= configuration || (dx == 0 && dy == 0) {
+	if dx == 0 && dy == 0 {
 		return
 	}
 	from := widgetPositions[m.focus]
 	closest, distance := -1, int(^uint(0)>>1)
 	for p, pos := range widgetPositions {
 		x, y := pos.x-from.x, pos.y-from.y
-		if (dx != 0 && y == 0 && x*dx > 0 && x*dx < distance) ||
-			(dy != 0 && x == 0 && y*dy > 0 && y*dy < distance) {
-			closest = p
-			if dx != 0 {
-				distance = x * dx
-			} else {
-				distance = y * dy
+		if dx != 0 {
+			if x*dx <= 0 {
+				continue
+			}
+			d := max(y, -y)
+			if d < distance || (d == distance && (closest < 0 || pos.y > widgetPositions[closest].y)) {
+				closest, distance = p, d
+			}
+		} else {
+			if x != 0 || y*dy <= 0 {
+				continue
+			}
+			d := max(y, -y)
+			if d < distance {
+				closest, distance = p, d
 			}
 		}
 	}

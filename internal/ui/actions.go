@@ -12,7 +12,7 @@ func (m model) volumeAction(change string) tea.Cmd {
 	if id == "" || m.focus == configuration {
 		return nil
 	}
-	op := []audio.Operation{audio.SetPlaybackVolume, audio.SetRecordingVolume, audio.SetOutputVolume, audio.SetInputVolume}[m.focus]
+	op := [...]audio.Operation{outputs: audio.SetOutputVolume, inputs: audio.SetInputVolume, playback: audio.SetPlaybackVolume, recording: audio.SetRecordingVolume}[m.focus]
 	return m.runAction(audio.Action{Operation: op, Target: id, Value: change})
 }
 func (m model) muteAction() tea.Cmd {
@@ -20,7 +20,7 @@ func (m model) muteAction() tea.Cmd {
 	if id == "" || m.focus == configuration {
 		return nil
 	}
-	op := []audio.Operation{audio.TogglePlaybackMute, audio.ToggleRecordingMute, audio.ToggleOutputMute, audio.ToggleInputMute}[m.focus]
+	op := [...]audio.Operation{outputs: audio.ToggleOutputMute, inputs: audio.ToggleInputMute, playback: audio.TogglePlaybackMute, recording: audio.ToggleRecordingMute}[m.focus]
 	return m.runAction(audio.Action{Operation: op, Target: id})
 }
 func (m model) defaultAction() tea.Cmd {
