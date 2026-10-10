@@ -42,8 +42,18 @@ On a wide terminal, four bordered widgets show **Playback** (application audio),
 
 Selecting a card profile can change which inputs and outputs are available. Monitor sources are listed alongside microphones. Volume display averages channels; controls currently change all channels together. This is not a full replacement for pavucontrol: per-channel volume, balance, and advanced device settings are not supported.
 
+## Project structure
+
+- `main.go` — composition root: checks for `pactl`, wires the backend and starts Bubble Tea.
+- `internal/audio/` — audio snapshot types, operations and backend interface; no CLI or TUI dependencies.
+- `internal/pactl/` — adapter for `pactl` JSON, commands and optional Bluetooth names.
+- `internal/ui/` — Bubble Tea state and key handling (`model.go`, `navigation.go`, `actions.go`, `update.go`), rendering (`view.go`) and styles (`theme.go`).
+
+The UI depends on the `audio.Backend` interface, not directly on `pactl`, so tests use a fake backend without touching system audio. Go's `internal` packages keep implementation details private to this module.
+
 ## Tests
 
 ```sh
 go test ./...
+go vet ./...
 ```

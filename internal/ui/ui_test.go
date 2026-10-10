@@ -1,23 +1,25 @@
-package main
+package ui
 
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 
+	"github.com/Mrhunderb/aiyou/internal/audio"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
 func sampleModel() model {
-	v := map[string]ChannelVolume{"front-left": {ValuePercent: "35%", Value: 22934}}
+	v := map[string]audio.ChannelVolume{"front-left": {ValuePercent: "35%", Value: 22934}}
 	return model{
 		width: 100, height: 30,
-		data: AudioSnapshot{
-			Sinks:         []Sink{{Index: 1, Name: "speakers", DisplayName: "Speakers", Volume: v}, {Index: 2, Name: "headphones", DisplayName: "耳机 Polaris", Volume: v}},
-			Sources:       []Source{{Index: 3, Name: "microphone", DisplayName: "Microphone", Volume: v}},
-			SinkInputs:    []SinkInput{{Index: 4, Sink: 1, DisplayName: "Music Player", Volume: v}},
-			SourceOutputs: []SourceOutput{{Index: 5, Source: 3, DisplayName: "Recorder", Volume: v}},
-			Cards:         []Card{{Name: "card", DisplayName: "Internal Card", ActiveProfile: "HiFi", Profiles: map[string]CardProfile{"off": {Description: "Off", Available: true}}}},
+		data: audio.Snapshot{
+			Sinks:         []audio.Sink{{Index: 1, Name: "speakers", DisplayName: "Speakers", Volume: v}, {Index: 2, Name: "headphones", DisplayName: "耳机 Polaris", Volume: v}},
+			Sources:       []audio.Source{{Index: 3, Name: "microphone", DisplayName: "Microphone", Volume: v}},
+			SinkInputs:    []audio.SinkInput{{Index: 4, Sink: 1, DisplayName: "Music Player", Volume: v}},
+			SourceOutputs: []audio.SourceOutput{{Index: 5, Source: 3, DisplayName: "Recorder", Volume: v}},
+			Cards:         []audio.Card{{Name: "card", DisplayName: "Internal Card", ActiveProfile: "HiFi", Profiles: map[string]audio.CardProfile{"off": {Description: "Off", Available: true}}}},
 		},
 	}
 }
@@ -54,7 +56,7 @@ func TestNavigationAndMenu(t *testing.T) {
 	}
 	m = key(m, "5")
 	m = key(m, "enter")
-	if len(m.menu) != 1 || m.menu[0].args[0] != "set-card-profile" {
+	if len(m.menu) != 1 || m.menu[0].action.Operation != audio.SetCardProfile {
 		t.Fatalf("profile menu: %+v", m.menu)
 	}
 	m = key(m, "esc")
@@ -128,12 +130,12 @@ func TestRenderBounds(t *testing.T) {
 		}
 	}
 }
-func TestTruncateCellsAndAvg(t *testing.T) {
+func TestTruncateCells(t *testing.T) {
 	if lipgloss.Width(truncate("中文耳机 Polaris", 8)) > 8 {
 		t.Fatal("unicode truncate exceeds width")
 	}
-	p, _, _ := getAvgVolume(map[string]ChannelVolume{"left": {ValuePercent: "30%"}, "right": {ValuePercent: "50%"}})
-	if p != 40 {
-		t.Fatalf("average volume = %d", p)
+	got := truncate(strings.Repeat("中文", 25), 42)
+	if !utf8.ValidString(got) || !strings.HasSuffix(got, "…") {
+		t.Fatalf("invalid truncated display: %q", got)
 	}
 }
