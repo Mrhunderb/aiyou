@@ -22,8 +22,27 @@ func volumeBar(percent, width int) string {
 	filled := min(width, max(0, percent*width/100))
 	return lipgloss.NewStyle().Foreground(green).Render(strings.Repeat("━", filled)) + mutedStyle.Render(strings.Repeat("─", width-filled))
 }
+
+// A fixed leading cell keeps the default-device marker visible even when
+// long device names are truncated or the row is selected.
+func (m model) defaultMarker(p, i int) string {
+	switch p {
+	case outputs:
+		if m.data.DefaultSink != "" && m.data.Sinks[i].Name == m.data.DefaultSink {
+			return "★ "
+		}
+		return "  "
+	case inputs:
+		if m.data.DefaultSource != "" && m.data.Sources[i].Name == m.data.DefaultSource {
+			return "★ "
+		}
+		return "  "
+	}
+	return ""
+}
 func (m model) row(p, i, width int) string {
 	name := m.rowName(p, i)
+	marker := m.defaultMarker(p, i)
 	var vol map[string]audio.ChannelVolume
 	var muted bool
 	var suffix string
@@ -49,17 +68,13 @@ func (m model) row(p, i, width int) string {
 	case outputs:
 		s := m.data.Sinks[i]
 		vol, muted = s.Volume, s.Mute
-		if s.Name == m.data.DefaultSink {
-			suffix = " ★ DEFAULT"
-		} else if s.ActivePort != "" {
+		if s.ActivePort != "" {
 			suffix = " · " + s.ActivePort
 		}
 	case inputs:
 		s := m.data.Sources[i]
 		vol, muted = s.Volume, s.Mute
-		if s.Name == m.data.DefaultSource {
-			suffix = " ★ DEFAULT"
-		} else if s.IsMonitor {
+		if s.IsMonitor {
 			suffix = " · Monitor"
 		} else if s.ActivePort != "" {
 			suffix = " · " + s.ActivePort
@@ -69,7 +84,7 @@ func (m model) row(p, i, width int) string {
 		suffix = " · " + s.ActiveProfile
 	}
 	if width < 10 {
-		return truncate(name, width)
+		return truncate(marker+name, width)
 	}
 	if p == configuration {
 		return truncate(name+suffix, width)
@@ -83,10 +98,13 @@ func (m model) row(p, i, width int) string {
 	if width < 42 {
 		barWidth = 5
 	}
-	available := max(1, width-barWidth-7-lipgloss.Width(pct))
+	available := max(1, width-barWidth-7-lipgloss.Width(pct)-lipgloss.Width(marker))
 	label := truncate(name+suffix, available)
 	label = lipgloss.NewStyle().Width(available).Render(label)
-	return fmt.Sprintf("%s %s %s %s", label, volumeBar(v, barWidth), pct, indicator)
+	if strings.HasPrefix(marker, "★") {
+		marker = lipgloss.NewStyle().Foreground(green).Render(marker)
+	}
+	return fmt.Sprintf("%s%s %s %s %s", marker, label, volumeBar(v, barWidth), pct, indicator)
 }
 func (m model) panel(p, width, height int) string {
 	if width < 4 {
@@ -146,6 +164,7 @@ func (m model) panel(p, width, height int) string {
 // plainRow mirrors the content of a selected row without ANSI escapes, so highlight covers the whole line.
 func (m model) plainRow(p, i, width int) string {
 	name := m.rowName(p, i)
+	marker := m.defaultMarker(p, i)
 	if p == configuration {
 		return name + " · " + m.data.Cards[i].ActiveProfile
 	}
@@ -159,15 +178,9 @@ func (m model) plainRow(p, i, width int) string {
 	case outputs:
 		s := m.data.Sinks[i]
 		vol, muted = s.Volume, s.Mute
-		if s.Name == m.data.DefaultSink {
-			name += " ★"
-		}
 	case inputs:
 		s := m.data.Sources[i]
 		vol, muted = s.Volume, s.Mute
-		if s.Name == m.data.DefaultSource {
-			name += " ★"
-		}
 		if s.IsMonitor {
 			name += " · Monitor"
 		}
@@ -177,7 +190,7 @@ func (m model) plainRow(p, i, width int) string {
 	if muted {
 		state = " MUTED"
 	}
-	return fmt.Sprintf("› %s  %s%s", truncate(name, max(1, width-lipgloss.Width(pct)-10)), pct, state)
+	return fmt.Sprintf("› %s%s  %s%s", marker, truncate(name, max(1, width-lipgloss.Width(marker)-lipgloss.Width(pct)-10)), pct, state)
 }
 func (m model) View() string {
 	w, h := m.width, m.height

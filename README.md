@@ -23,7 +23,7 @@ go build -o aiyou . && ./aiyou
 
 ## Layout
 
-On a wide terminal, all five bordered widgets share one dashboard. The left column contains **1 Output Devices** (speakers/headphones) above **2 Input Devices** (microphones/monitor sources). The right column contains **3 Playback** (application audio), **4 Recording** (applications capturing audio), and **5 Configuration** (card profiles), top to bottom. A focused widget has a cyan border and highlighted selection. On narrow terminals or in expanded mode, only the focused widget is shown. `Tab` and keys `1`–`5` follow this numbered order; directional focus uses the widgets' screen positions.
+On a wide terminal, all five bordered widgets share one dashboard. The left column contains **1 Output Devices** (speakers/headphones) above **2 Input Devices** (microphones/monitor sources). The right column contains **3 Playback** (application audio), **4 Recording** (applications capturing audio), and **5 Configuration** (card profiles), top to bottom. **★** at the start of a device row marks the default output or input, even when that row is selected or its name is truncated. A focused widget has a cyan border and highlighted selection. On narrow terminals or in expanded mode, only the focused widget is shown. `Tab` and keys `1`–`5` follow this numbered order; directional focus uses the widgets' screen positions.
 
 ## Keys
 

@@ -41,6 +41,36 @@ func key(m model, name string) model {
 	updated, _ := m.Update(msg)
 	return updated.(model)
 }
+func TestDefaultDeviceMarker(t *testing.T) {
+	m := sampleModel()
+	m.data.DefaultSink = "headphones"
+	m.data.DefaultSource = "microphone"
+	m.data.Sinks[1].DisplayName = strings.Repeat("Very Long Headphones ", 5)
+	for _, tc := range []struct{ panel, defaultRow int }{{outputs, 1}, {inputs, 0}} {
+		m.focus = tc.panel
+		m.cursor[tc.panel] = tc.defaultRow
+		panel := ansi.Strip(m.panel(tc.panel, 32, 8))
+		if !strings.Contains(panel, "› ★ ") {
+			t.Errorf("panel %d: selected default marker missing after truncation: %q", tc.panel, panel)
+		}
+		m.focus = playback // Render the same row without selection.
+		panel = ansi.Strip(m.panel(tc.panel, 32, 8))
+		if !strings.Contains(panel, "★ ") || strings.Count(panel, "★") != 1 {
+			t.Errorf("panel %d: expected exactly one unselected default marker: %q", tc.panel, panel)
+		}
+	}
+	m.data.DefaultSink = "speakers"
+	m.focus = outputs
+	m.cursor[outputs] = 0
+	if !strings.Contains(ansi.Strip(m.panel(outputs, 32, 8)), "› ★ Speakers") {
+		t.Fatal("default marker did not follow the changed default device")
+	}
+	m.data.DefaultSink = ""
+	if strings.Contains(ansi.Strip(m.panel(outputs, 32, 8)), "★") {
+		t.Fatal("missing default must not mark any device")
+	}
+}
+
 func TestNavigationAndMenu(t *testing.T) {
 	m := sampleModel()
 	m = key(m, "1")
