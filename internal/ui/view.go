@@ -108,29 +108,34 @@ func (m model) panel(p, width, height int) string {
 	} else {
 		label = mutedStyle.Render(label)
 	}
-	n := m.count(p)
-	if n == 0 {
-		return border.Render(label + "\n" + mutedStyle.Render("(none)"))
+	matches := m.visibleIndices(p)
+	if len(matches) == 0 {
+		message := "(none)"
+		if m.count(p) > 0 {
+			message = "(no matches)"
+		}
+		return border.Render(label + "\n" + mutedStyle.Render(message))
 	}
 	cursor := m.cursor[p]
+	cursorRow := indexOf(matches, cursor)
 	scroll := m.scroll[p]
-	// One line is reserved for the panel title.
-	visible := max(1, innerH-1)
-	if cursor < scroll {
-		scroll = cursor
+	// Scroll and page size are measured in visible rows, not snapshot indices.
+	pageSize := max(1, innerH-1)
+	if cursorRow >= 0 && cursorRow < scroll {
+		scroll = cursorRow
 	}
-	if cursor >= scroll+visible {
-		scroll = cursor - visible + 1
+	if cursorRow >= scroll+pageSize {
+		scroll = cursorRow - pageSize + 1
 	}
-	if scroll > max(0, n-visible) {
-		scroll = max(0, n-visible)
+	if scroll > max(0, len(matches)-pageSize) {
+		scroll = max(0, len(matches)-pageSize)
 	}
 	var lines []string
 	lines = append(lines, truncate(label, innerW))
-	for i := scroll; i < n && i < scroll+visible; i++ {
+	for rowIndex := scroll; rowIndex < len(matches) && rowIndex < scroll+pageSize; rowIndex++ {
+		i := matches[rowIndex]
 		row := m.row(p, i, innerW)
 		if i == cursor && m.focus == p {
-			// Re-render selected row as a solid highlighted line.
 			row = selectedStyle.Width(innerW).Render(truncate(m.plainRow(p, i, innerW), innerW))
 		}
 		lines = append(lines, row)
@@ -194,7 +199,7 @@ func (m model) View() string {
 			"Tab / Shift-Tab / 1-5   Switch widget", "Ctrl+arrows / H J K L / W A S D  Focus by position",
 			"↑ ↓ / j k             Select item", "← → / h l / - +       Volume ±5%",
 			"m  Mute/unmute         d  Set default input/output", "Enter / p   Route stream, choose port or profile",
-			"e  Expand widget       Esc  Close / collapse", "/  Find item           n / N  Next / previous match",
+			"e  Expand widget       Esc  Close / collapse", "/  Filter this widget  n / N  Next / previous match",
 			"r  Refresh             q / Ctrl-C  Quit", "", "Press any key to close",
 		}, w, availableH)
 	} else if len(m.menu) > 0 {

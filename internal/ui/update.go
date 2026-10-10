@@ -58,15 +58,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch key {
 			case "esc", "enter":
 				m.searching = false
+			case "up":
+				m.move(-1)
+			case "down":
+				m.move(1)
+			case "home":
+				m.moveToBoundary(false)
+			case "end":
+				m.moveToBoundary(true)
+			case "pgup":
+				m.move(-max(1, m.height/2))
+			case "pgdown":
+				m.move(max(1, m.height/2))
 			case "backspace", "ctrl+h":
 				if len(m.search) > 0 {
 					m.search = string([]rune(m.search)[:len([]rune(m.search))-1])
-					m.filterMove(true)
+					m.normalizeSelection()
 				}
 			default:
 				if len(msg.Runes) > 0 {
 					m.search += string(msg.Runes)
-					m.filterMove(true)
+					m.normalizeSelection()
 				}
 			}
 			return m, nil
@@ -100,9 +112,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "down", "j":
 			m.move(1)
 		case "home", "g":
-			m.cursor[m.focus] = 0
+			m.moveToBoundary(false)
 		case "end", "G":
-			m.cursor[m.focus] = max(0, m.count(m.focus)-1)
+			m.moveToBoundary(true)
 		case "pgup":
 			m.move(-max(1, m.height/2))
 		case "pgdown":

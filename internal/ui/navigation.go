@@ -5,42 +5,41 @@ import (
 	"strings"
 )
 
+// Cursors store indices in the unfiltered snapshot so actions always target
+// the original object, regardless of the displayed row position.
 func (m model) selectedID(p int) string {
 	idx := m.cursor[p]
+	if idx < 0 || idx >= m.count(p) || !m.matchesSearch(p, idx) {
+		return ""
+	}
+	return m.rowID(p, idx)
+}
+func (m model) rowID(p, idx int) string {
 	switch p {
 	case playback:
-		if idx < len(m.data.SinkInputs) {
-			return strconv.FormatUint(uint64(m.data.SinkInputs[idx].Index), 10)
-		}
+		return strconv.FormatUint(uint64(m.data.SinkInputs[idx].Index), 10)
 	case recording:
-		if idx < len(m.data.SourceOutputs) {
-			return strconv.FormatUint(uint64(m.data.SourceOutputs[idx].Index), 10)
-		}
+		return strconv.FormatUint(uint64(m.data.SourceOutputs[idx].Index), 10)
 	case outputs:
-		if idx < len(m.data.Sinks) {
-			return m.data.Sinks[idx].Name
-		}
+		return m.data.Sinks[idx].Name
 	case inputs:
-		if idx < len(m.data.Sources) {
-			return m.data.Sources[idx].Name
-		}
+		return m.data.Sources[idx].Name
 	case configuration:
-		if idx < len(m.data.Cards) {
-			return m.data.Cards[idx].Name
-		}
+		return m.data.Cards[idx].Name
 	}
 	return ""
 }
 func (m model) findID(p int, id string) int {
-	if id == "" {
-		return 0
-	}
-	n := m.count(p)
-	for i := 0; i < n; i++ {
-		m.cursor[p] = i
-		if m.selectedID(p) == id {
-			return i
+	if id != "" {
+		for i := 0; i < m.count(p); i++ {
+			if m.rowID(p, i) == id && m.matchesSearch(p, i) {
+				return i
+			}
 		}
+	}
+	visible := m.visibleIndices(p)
+	if len(visible) > 0 {
+		return visible[0]
 	}
 	return 0
 }
@@ -110,31 +109,81 @@ func (m *model) focusDirection(dx, dy int) {
 	}
 }
 
-func (m *model) move(delta int) {
-	if m.count(m.focus) == 0 {
+func (m model) matchesSearch(p, i int) bool {
+	return m.search == "" || p != m.focus ||
+		strings.Contains(strings.ToLower(m.rowName(p, i)), strings.ToLower(m.search))
+}
+
+// visibleIndices maps a filtered row back to the original snapshot index.
+// Only the focused widget is filtered; other widgets keep their own contents.
+func (m model) visibleIndices(p int) []int {
+	visible := make([]int, 0, m.count(p))
+	for i := 0; i < m.count(p); i++ {
+		if m.matchesSearch(p, i) {
+			visible = append(visible, i)
+		}
+	}
+	return visible
+}
+func indexOf(indices []int, original int) int {
+	for i, idx := range indices {
+		if idx == original {
+			return i
+		}
+	}
+	return -1
+}
+func (m *model) normalizeSelection() {
+	visible := m.visibleIndices(m.focus)
+	if len(visible) == 0 {
+		m.cursor[m.focus] = 0
 		return
 	}
-	m.cursor[m.focus] = max(0, min(m.count(m.focus)-1, m.cursor[m.focus]+delta))
+	if indexOf(visible, m.cursor[m.focus]) < 0 {
+		m.cursor[m.focus] = visible[0]
+	}
+}
+func (m *model) move(delta int) {
+	visible := m.visibleIndices(m.focus)
+	if len(visible) == 0 {
+		return
+	}
+	pos := indexOf(visible, m.cursor[m.focus])
+	if pos < 0 {
+		pos = 0
+	} else {
+		pos = max(0, min(len(visible)-1, pos+delta))
+	}
+	m.cursor[m.focus] = visible[pos]
+}
+func (m *model) moveToBoundary(last bool) {
+	visible := m.visibleIndices(m.focus)
+	if len(visible) == 0 {
+		return
+	}
+	if last {
+		m.cursor[m.focus] = visible[len(visible)-1]
+	} else {
+		m.cursor[m.focus] = visible[0]
+	}
 }
 func (m *model) filterMove(forward bool) {
 	if m.search == "" {
 		return
 	}
-	n := m.count(m.focus)
-	if n == 0 {
+	visible := m.visibleIndices(m.focus)
+	if len(visible) == 0 {
 		return
 	}
-	start := m.cursor[m.focus]
-	for step := 1; step <= n; step++ {
-		i := (start + step) % n
-		if !forward {
-			i = (start - step + n*2) % n
-		}
-		if strings.Contains(strings.ToLower(m.rowName(m.focus, i)), strings.ToLower(m.search)) {
-			m.cursor[m.focus] = i
-			return
-		}
+	pos := indexOf(visible, m.cursor[m.focus])
+	if pos < 0 {
+		pos = 0
+	} else if forward {
+		pos = (pos + 1) % len(visible)
+	} else {
+		pos = (pos - 1 + len(visible)) % len(visible)
 	}
+	m.cursor[m.focus] = visible[pos]
 }
 func (m model) rowName(p, i int) string {
 	switch p {

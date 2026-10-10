@@ -38,8 +38,9 @@ On a wide terminal, all five bordered widgets share one dashboard. The left colu
 | `d` | Set selected output/input device as default |
 | `Enter` or `p` | Choose destination for a stream, port for a device, or profile for a card |
 | `e` | Expand or collapse selected widget; while expanded, switching widgets is disabled until `e` or `Esc` |
-| `/`, `n`/`N` | Find an item by name, then jump to next/previous match |
-| `Esc` | Close menu/search/help or collapse expanded view |
+| `/` | Filter the focused widget by name (case-insensitive); hide non-matching rows. `Enter` keeps the filter |
+| `n`/`N` | Select next/previous matching row when filtered |
+| `Esc` | Stop typing without clearing the filter; press again to clear it. Also closes menus/help or collapses expanded view |
 | `?` | Show help |
 | `r` | Refresh now (also refreshes every two seconds) |
 | `q` or `Ctrl-C` | Quit |
