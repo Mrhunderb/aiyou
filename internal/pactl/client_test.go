@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Mrhunderb/ayou/internal/audio"
 )
@@ -76,6 +77,23 @@ func TestSnapshot(t *testing.T) {
 		t.Fatalf("expected decode error, got %v", err)
 	}
 }
+func TestConfiguredTimeout(t *testing.T) {
+	client := New(250*time.Millisecond, 750*time.Millisecond)
+	if client.timeout != 250*time.Millisecond {
+		t.Fatalf("pactl timeout = %s", client.timeout)
+	}
+	client.run = func(ctx context.Context, _ string, _ ...string) ([]byte, error) {
+		deadline, ok := ctx.Deadline()
+		if !ok || time.Until(deadline) > 250*time.Millisecond {
+			t.Errorf("wrong command deadline: %v, %v", deadline, ok)
+		}
+		return nil, nil
+	}
+	if _, err := client.call("get-default-sink"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestArguments(t *testing.T) {
 	tests := []struct {
 		action audio.Action

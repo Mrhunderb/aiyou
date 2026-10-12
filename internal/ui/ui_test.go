@@ -6,14 +6,17 @@ import (
 	"unicode/utf8"
 
 	"github.com/Mrhunderb/ayou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
 )
 
 func sampleModel() model {
+	cfg := config.Default()
 	v := map[string]audio.ChannelVolume{"front-left": {ValuePercent: "35%", Value: 22934}}
 	return model{
+		config: cfg, theme: newTheme(cfg.Theme),
 		width: 100, height: 30,
 		data: audio.Snapshot{
 			Sinks:         []audio.Sink{{Index: 1, Name: "speakers", DisplayName: "Speakers", Volume: v}, {Index: 2, Name: "headphones", DisplayName: "耳机 Polaris", Volume: v}},

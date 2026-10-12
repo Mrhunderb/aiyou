@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -9,7 +11,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 	case tickMsg:
-		return m, tea.Batch(m.refresh(), tick())
+		return m, tea.Batch(m.refresh(), m.tick())
 	case refreshMsg:
 		if msg.err != nil {
 			m.status = msg.err.Error()
@@ -120,9 +122,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "pgdown":
 			m.move(max(1, m.height/2))
 		case "left", "h", "-":
-			return m, m.volumeAction("-5%")
+			return m, m.volumeAction(fmt.Sprintf("-%d%%", m.config.VolumeStep))
 		case "right", "l", "+", "=":
-			return m, m.volumeAction("+5%")
+			return m, m.volumeAction(fmt.Sprintf("+%d%%", m.config.VolumeStep))
 		case "m":
 			return m, m.muteAction()
 		case "d":

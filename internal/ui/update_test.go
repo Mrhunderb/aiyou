@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Mrhunderb/ayou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -60,7 +61,7 @@ func TestQuitFromNestedViews(t *testing.T) {
 
 func TestRefreshRetainsSelection(t *testing.T) {
 	backend := &stubBackend{}
-	m := New(backend).(model)
+	m := New(backend, config.Default()).(model)
 	backend.snapshot = sampleModel().data
 	result := m.refresh()().(refreshMsg)
 	updated, _ := m.Update(result)

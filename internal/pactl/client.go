@@ -15,11 +15,17 @@ import (
 
 // Client invokes pactl to load state and execute audio operations.
 type Client struct {
-	run    func(context.Context, string, ...string) ([]byte, error)
-	lookup func(string) string
+	run     func(context.Context, string, ...string) ([]byte, error)
+	lookup  func(string) string
+	timeout time.Duration
 }
 
-func New() *Client { return &Client{run: command, lookup: bluetoothName} }
+func New(pactlTimeout, bluetoothTimeout time.Duration) *Client {
+	return &Client{
+		run: command, timeout: pactlTimeout,
+		lookup: func(address string) string { return bluetoothName(address, bluetoothTimeout) },
+	}
+}
 
 func command(ctx context.Context, name string, args ...string) ([]byte, error) {
 	cmd := exec.CommandContext(ctx, name, args...)
@@ -36,7 +42,7 @@ func command(ctx context.Context, name string, args ...string) ([]byte, error) {
 	return out, nil
 }
 func (c *Client) call(args ...string) ([]byte, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)
 	defer cancel()
 	return c.run(ctx, "pactl", args...)
 }
@@ -58,11 +64,11 @@ func parseBluetoothName(output string) string {
 	}
 	return ""
 }
-func bluetoothName(address string) string {
+func bluetoothName(address string, timeout time.Duration) string {
 	if !bluetoothAddress.MatchString(address) {
 		return ""
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	out, err := command(ctx, "bluetoothctl", "info", address)
 	if err != nil {

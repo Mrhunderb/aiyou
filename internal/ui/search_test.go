@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Mrhunderb/ayou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 )
@@ -129,7 +130,7 @@ func TestSearchNoMatchesDisablesActions(t *testing.T) {
 }
 func TestFilteredRefreshMaintainsSelection(t *testing.T) {
 	backend := &stubBackend{snapshot: searchModel().data}
-	m := New(backend).(model)
+	m := New(backend, config.Default()).(model)
 	updated, _ := m.Update(m.refresh()())
 	m = updated.(model)
 	m.search = "head"

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/Mrhunderb/ayou/internal/audio"
+	"github.com/Mrhunderb/ayou/internal/config"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -34,6 +35,8 @@ type menuOption struct {
 }
 type model struct {
 	backend    audio.Backend
+	config     config.Config
+	theme      theme
 	data       audio.Snapshot
 	focus      int
 	cursor     [panelCount]int
@@ -50,8 +53,10 @@ type model struct {
 	menuCursor int
 }
 
-// New wires the backend to the Bubble Tea model.
-func New(backend audio.Backend) tea.Model { return model{backend: backend} }
+// New wires validated configuration and the backend to the Bubble Tea model.
+func New(backend audio.Backend, cfg config.Config) tea.Model {
+	return model{backend: backend, config: cfg, theme: newTheme(cfg.Theme)}
+}
 
 func (m model) refresh() tea.Cmd {
 	return func() tea.Msg { s, err := m.backend.Snapshot(); return refreshMsg{s, err} }
@@ -59,5 +64,7 @@ func (m model) refresh() tea.Cmd {
 func (m model) runAction(action audio.Action) tea.Cmd {
 	return func() tea.Msg { err := m.backend.Execute(action); return actionMsg{action.String(), err} }
 }
-func tick() tea.Cmd           { return tea.Tick(2*time.Second, func(time.Time) tea.Msg { return tickMsg{} }) }
-func (m model) Init() tea.Cmd { return tea.Batch(m.refresh(), tick()) }
+func (m model) tick() tea.Cmd {
+	return tea.Tick(m.config.RefreshInterval.Duration(), func(time.Time) tea.Msg { return tickMsg{} })
+}
+func (m model) Init() tea.Cmd { return tea.Batch(m.refresh(), m.tick()) }

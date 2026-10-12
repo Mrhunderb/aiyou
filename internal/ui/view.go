@@ -15,12 +15,12 @@ func truncate(s string, maxWidth int) string {
 	}
 	return ansi.Truncate(s, maxWidth, "…")
 }
-func volumeBar(percent, width int) string {
+func (m model) volumeBar(percent, width int) string {
 	if width < 1 {
 		return ""
 	}
 	filled := min(width, max(0, percent*width/100))
-	return lipgloss.NewStyle().Foreground(green).Render(strings.Repeat("━", filled)) + mutedStyle.Render(strings.Repeat("─", width-filled))
+	return lipgloss.NewStyle().Foreground(m.theme.volume).Render(strings.Repeat("━", filled)) + m.theme.mutedStyle.Render(strings.Repeat("─", width-filled))
 }
 
 // A fixed leading cell keeps the default-device marker visible even when
@@ -92,19 +92,21 @@ func (m model) row(p, i, width int) string {
 	v, pct, _ := audio.AverageVolume(vol)
 	indicator := " "
 	if muted {
-		indicator = lipgloss.NewStyle().Foreground(red).Render("M")
+		indicator = lipgloss.NewStyle().Foreground(m.theme.muted).Render("M")
 	}
-	barWidth := 10
-	if width < 42 {
-		barWidth = 5
+	barWidth := m.config.Layout.VolumeBarWidth
+	if width < m.config.Layout.CompactBarThreshold {
+		barWidth = m.config.Layout.CompactBarWidth
 	}
+	// Even a user-selected wide bar must fit within a narrow panel.
+	barWidth = min(barWidth, max(1, width-lipgloss.Width(pct)-lipgloss.Width(marker)-8))
 	available := max(1, width-barWidth-7-lipgloss.Width(pct)-lipgloss.Width(marker))
 	label := truncate(name+suffix, available)
 	label = lipgloss.NewStyle().Width(available).Render(label)
 	if strings.HasPrefix(marker, "★") {
-		marker = lipgloss.NewStyle().Foreground(green).Render(marker)
+		marker = lipgloss.NewStyle().Foreground(m.theme.volume).Render(marker)
 	}
-	return fmt.Sprintf("%s%s %s %s %s", marker, label, volumeBar(v, barWidth), pct, indicator)
+	return fmt.Sprintf("%s%s %s %s %s", marker, label, m.volumeBar(v, barWidth), pct, indicator)
 }
 func (m model) panel(p, width, height int) string {
 	if width < 4 {
@@ -115,16 +117,16 @@ func (m model) panel(p, width, height int) string {
 	}
 	innerW := width - 4
 	innerH := height - 2
-	borderColor := dim
+	borderColor := m.theme.dim
 	if m.focus == p {
-		borderColor = cyan
+		borderColor = m.theme.active
 	}
 	border := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(borderColor).Width(width-2).Height(height-2).Padding(0, 1)
 	label := fmt.Sprintf(" %d %s ", p+1, titles[p])
 	if m.focus == p {
-		label = titleStyle.Render(label)
+		label = m.theme.titleStyle.Render(label)
 	} else {
-		label = mutedStyle.Render(label)
+		label = m.theme.mutedStyle.Render(label)
 	}
 	matches := m.visibleIndices(p)
 	if len(matches) == 0 {
@@ -132,7 +134,7 @@ func (m model) panel(p, width, height int) string {
 		if m.count(p) > 0 {
 			message = "(no matches)"
 		}
-		return border.Render(label + "\n" + mutedStyle.Render(message))
+		return border.Render(label + "\n" + m.theme.mutedStyle.Render(message))
 	}
 	cursor := m.cursor[p]
 	cursorRow := indexOf(matches, cursor)
@@ -154,7 +156,7 @@ func (m model) panel(p, width, height int) string {
 		i := matches[rowIndex]
 		row := m.row(p, i, innerW)
 		if i == cursor && m.focus == p {
-			row = selectedStyle.Width(innerW).Render(truncate(m.plainRow(p, i, innerW), innerW))
+			row = m.theme.selectedStyle.Width(innerW).Render(truncate(m.plainRow(p, i, innerW), innerW))
 		}
 		lines = append(lines, row)
 	}
@@ -203,14 +205,14 @@ func (m model) View() string {
 	if w < 20 || h < 9 {
 		return "ayou: terminal too small (need 20x9)"
 	}
-	header := titleStyle.Render(" ◉ AYOU ") + mutedStyle.Render("│") + "  PulseAudio / PipeWire  " + mutedStyle.Render("│") + "  " + fmt.Sprintf("OUT %d  IN %d  PLAY %d  REC %d", len(m.data.Sinks), len(m.data.Sources), len(m.data.SinkInputs), len(m.data.SourceOutputs))
+	header := m.theme.titleStyle.Render(" ◉ AYOU ") + m.theme.mutedStyle.Render("│") + "  PulseAudio / PipeWire  " + m.theme.mutedStyle.Render("│") + "  " + fmt.Sprintf("OUT %d  IN %d  PLAY %d  REC %d", len(m.data.Sinks), len(m.data.Sources), len(m.data.SinkInputs), len(m.data.SourceOutputs))
 	header = truncate(header, w)
 	var body string
 	availableH := max(3, h-4)
 	if m.help {
 		body = m.panelText("KEYBOARD HELP", []string{
 			"Tab / Shift-Tab / 1-5   Switch widget", "Ctrl+arrows / H J K L / W A S D  Focus by position",
-			"↑ ↓ / j k             Select item", "← → / h l / - +       Volume ±5%",
+			"↑ ↓ / j k             Select item", fmt.Sprintf("← → / h l / - +       Volume ±%d%%", m.config.VolumeStep),
 			"m  Mute/unmute         d  Set default input/output", "Enter / p   Route stream, choose port or profile",
 			"e  Expand widget       Esc  Close / collapse", "/  Filter this widget  n / N  Next / previous match",
 			"r  Refresh             q / Ctrl-C  Quit", "", "Press any key to close",
@@ -223,15 +225,15 @@ func (m model) View() string {
 		for i := start; i < len(m.menu) && i < start+visible; i++ {
 			line := truncate(m.menu[i].label, w-6)
 			if i == m.menuCursor {
-				line = selectedStyle.Render("› " + line)
+				line = m.theme.selectedStyle.Render("› " + line)
 			} else {
 				line = "  " + line
 			}
 			rows = append(rows, line)
 		}
-		rows = append(rows, mutedStyle.Render(fmt.Sprintf("%d-%d/%d  ↑↓ choose  Enter apply  Esc cancel", start+1, min(len(m.menu), start+visible), len(m.menu))))
+		rows = append(rows, m.theme.mutedStyle.Render(fmt.Sprintf("%d-%d/%d  ↑↓ choose  Enter apply  Esc cancel", start+1, min(len(m.menu), start+visible), len(m.menu))))
 		body = m.panelText(m.menuTitle, rows, w, availableH)
-	} else if m.expanded || w < 70 || h < 20 {
+	} else if m.expanded || w < m.config.Layout.DashboardMinWidth || h < m.config.Layout.DashboardMinHeight {
 		body = m.panel(m.focus, w, availableH)
 	} else {
 		leftW := w / 2
@@ -257,13 +259,13 @@ func (m model) View() string {
 	if status == "" {
 		status = "Ready"
 	}
-	footer := mutedStyle.Render(truncate("[Tab] widget  [↑↓] select  [←→] volume  [m] mute  [d] default  [Enter] options  [e] expand  [?] help  [q] quit", w))
+	footer := m.theme.mutedStyle.Render(truncate("[Tab] widget  [↑↓] select  [←→] volume  [m] mute  [d] default  [Enter] options  [e] expand  [?] help  [q] quit", w))
 	return lipgloss.JoinVertical(lipgloss.Left, header, body, truncate(status, w), footer)
 }
 func (m model) panelText(title string, rows []string, width, height int) string {
-	st := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(accent).Width(width-2).Height(height-2).Padding(0, 1)
+	st := lipgloss.NewStyle().Border(lipgloss.RoundedBorder()).BorderForeground(m.theme.accent).Width(width-2).Height(height-2).Padding(0, 1)
 	var lines []string
-	lines = append(lines, titleStyle.Render(" "+title+" "))
+	lines = append(lines, m.theme.titleStyle.Render(" "+title+" "))
 	visible := max(0, height-3)
 	for i, r := range rows {
 		if i >= visible {
@@ -272,7 +274,7 @@ func (m model) panelText(title string, rows []string, width, height int) string 
 		lines = append(lines, truncate(r, width-4))
 	}
 	if len(rows) > visible && visible > 0 {
-		lines[len(lines)-1] = mutedStyle.Render(truncate("… more (enlarge terminal)", width-4))
+		lines[len(lines)-1] = m.theme.mutedStyle.Render(truncate("… more (enlarge terminal)", width-4))
 	}
 	return st.Render(strings.Join(lines, "\n"))
 }

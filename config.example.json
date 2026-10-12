@@ -1,0 +1,24 @@
+{
+  "refresh_interval": "2s",
+  "volume_step": 5,
+  "layout": {
+    "dashboard_min_width": 70,
+    "dashboard_min_height": 20,
+    "volume_bar_width": 10,
+    "compact_bar_width": 5,
+    "compact_bar_threshold": 42
+  },
+  "theme": {
+    "accent": "#81A1C1",
+    "dim": "#6B7486",
+    "active": "#88C0D0",
+    "volume": "#A3BE8C",
+    "muted": "#BF616A",
+    "selection_foreground": "#2E3440",
+    "selection_background": "#88C0D0"
+  },
+  "backend": {
+    "pactl_timeout": "5s",
+    "bluetooth_timeout": "1s"
+  }
+}
