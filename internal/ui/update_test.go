@@ -18,6 +18,46 @@ type stubBackend struct {
 func (s *stubBackend) Snapshot() (audio.Snapshot, error) { return s.snapshot, s.err }
 func (s *stubBackend) Execute(a audio.Action) error      { s.actions = append(s.actions, a); return s.err }
 
+func TestQuitFromNestedViews(t *testing.T) {
+	quitKey := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("q")}
+	for _, mode := range []string{"normal", "expanded", "menu", "help"} {
+		m := sampleModel()
+		switch mode {
+		case "expanded":
+			m.expanded = true
+		case "menu":
+			m.focus = configuration
+			m.openMenu()
+		case "help":
+			m.help = true
+		}
+		_, cmd := m.Update(quitKey)
+		if cmd == nil {
+			t.Errorf("q ignored in %s", mode)
+			continue
+		}
+		if _, ok := cmd().(tea.QuitMsg); !ok {
+			t.Errorf("q in %s did not quit", mode)
+		}
+	}
+	m := sampleModel()
+	m.searching = true
+	_, cmd := m.Update(quitKey)
+	if cmd != nil {
+		t.Fatal("q should remain searchable text while typing")
+	}
+	updated, cmd := m.Update(tea.KeyMsg{Type: tea.KeyCtrlC})
+	if cmd == nil {
+		t.Fatal("Ctrl-C did not quit while searching")
+	}
+	if _, ok := cmd().(tea.QuitMsg); !ok {
+		t.Fatal("Ctrl-C did not quit while searching")
+	}
+	if !updated.(model).searching {
+		t.Fatal("search state unexpectedly changed")
+	}
+}
+
 func TestRefreshRetainsSelection(t *testing.T) {
 	backend := &stubBackend{}
 	m := New(backend).(model)

@@ -32,7 +32,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		key := msg.String()
-		if key == "ctrl+c" {
+		// Quit also works inside nested menus/help. While typing a search,
+		// q remains text input; Ctrl-C always exits.
+		if key == "ctrl+c" || (key == "q" && !m.searching) {
 			return m, tea.Quit
 		}
 		if m.help {
@@ -84,8 +86,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		switch key {
-		case "q":
-			return m, tea.Quit
 		case "?":
 			m.help = true
 		case "esc":
